@@ -82,7 +82,7 @@ async function getAppRouterSession() {
   const { cookies } = await import("next/headers");
 
   try {
-    return cookies().get("__session")?.value;
+    return (await cookies()).get("__session")?.value;
   } catch (error) {
     // cookies() throws when called from pages router
     return undefined;
