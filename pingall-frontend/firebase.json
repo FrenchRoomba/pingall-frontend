@@ -1,0 +1,11 @@
+{
+  "hosting": [
+    {
+      "target": "pingall-frontend",
+      "source": ".",
+      "frameworksBackend": {
+        "region": "australia-southeast1"
+      }
+    }
+  ]
+}

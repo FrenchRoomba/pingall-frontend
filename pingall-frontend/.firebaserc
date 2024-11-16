@@ -1,0 +1,14 @@
+{
+  "targets": {
+    "pingall": {
+      "hosting": {
+        "pingall-frontend": [
+          "pingall"
+        ]
+      }
+    }
+  },
+  "projects": {
+    "default": "pingall"
+  }
+}
