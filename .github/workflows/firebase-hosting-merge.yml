@@ -9,6 +9,7 @@ on:
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
+    concurrency: production
     environment: 
       name: production
       url: https://pingall.web.app
