@@ -31,31 +31,40 @@ export default function Home() {
     <main
       className={`flex min-h-screen flex-col items-center justify-between p-24`}
     >
-      <div className="flex w-full max-w-lg gap-2 justify-center">
-        <Input
-          className="flex-1"
-          type="text"
-          placeholder="Enter URL to ping"
-          value={inputUrl}
-          onChange={(e) => setInputUrl(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              handleQuery();
-            }
-          }}
-        />
-        <Button onClick={handleQuery} disabled={isQuerying || !inputUrl.trim()}>
-          {isQuerying ? "Pinging..." : "Ping"}
-        </Button>
-      </div>
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <LatencyTable
-          url={inputUrl.trim()}
-          onQueryStart={() => setIsQuerying(true)}
-          onQueryEnd={() => setIsQuerying(false)}
-          ref={tableRef}
-        />
-      </div>
+      {isLoading && !user ? (
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      ) : (
+        <>
+          <div className="flex w-full max-w-lg gap-2 justify-center">
+            <Input
+              className="flex-1"
+              type="text"
+              placeholder="Enter URL to ping"
+              value={inputUrl}
+              onChange={(e) => setInputUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleQuery();
+                }
+              }}
+            />
+            <Button
+              onClick={handleQuery}
+              disabled={isQuerying || !inputUrl.trim()}
+            >
+              {isQuerying ? "Pinging..." : "Ping"}
+            </Button>
+          </div>
+          <LatencyTable
+            ref={tableRef}
+            url={inputUrl}
+            onQueryStart={() => setIsQuerying(true)}
+            onQueryEnd={() => setIsQuerying(false)}
+          />
+        </>
+      )}
     </main>
   );
 }
