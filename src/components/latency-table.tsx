@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/table";
 import { useCallback, useEffect, useState } from "react";
 
+import { CloudLogo } from "./cloud-logos";
+import React from "react";
 import { getCurrentUser } from "@/lib/firebase/auth";
 import useSWRImmutable from "swr/immutable";
 import { useUser } from "@/lib/useUser";
@@ -129,37 +131,74 @@ export default function usePingQuery() {
   return [mutate, { data: results, isLoading, error }] as const;
 }
 
-export function LatencyTable({ url }: { url: string }) {
+export const LatencyTable = React.forwardRef<
+  { runQuery: () => Promise<void> },
+  {
+    url: string;
+    onQueryStart?: () => void;
+    onQueryEnd?: () => void;
+  }
+>(({ url, onQueryStart, onQueryEnd }, ref) => {
   const [mutate, { data, isLoading, error }] = usePingQuery();
-  useEffect(() => {
+
+  const runQuery = useCallback(async () => {
     if (url === "") {
       return;
     }
-    mutate(url);
-  }, [url]);
-  if (url === "") return <div>Nothing</div>;
+    onQueryStart?.();
+    await mutate(url);
+    onQueryEnd?.();
+  }, [url, mutate, onQueryStart, onQueryEnd]);
+
+  // Expose the runQuery method via ref
+  useEffect(() => {
+    if (ref && "current" in ref) {
+      ref.current = { runQuery };
+    }
+  }, [ref, runQuery]);
+
+  // Initial query on mount if URL is present
+  useEffect(() => {
+    if (url !== "") {
+      runQuery();
+    }
+  }, []); // Only run once on mount
+
   if (error) return <div>failed to load</div>;
-  const sorted_data = data.sort(
-    (a, b) => parseInt(a.latency) - parseInt(b.latency)
-  );
+
+  const sorted_data =
+    data?.sort((a, b) => parseInt(a.latency) - parseInt(b.latency)) || [];
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-[100px]">Cloud</TableHead>
-          <TableHead className="w-[100px]">Region</TableHead>
-          <TableHead className="text-right">Latency</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {data.map((result: any) => (
-          <TableRow key={`${result.provider}.${result.region}`}>
-            <TableCell>{result.provider}</TableCell>
-            <TableCell>{result.region}</TableCell>
-            <TableCell className="text-right">{result.latency}</TableCell>
+    <div className="w-full">
+      {isLoading && (
+        <div className="text-center mb-4">Running ping query...</div>
+      )}
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[150px]">Cloud</TableHead>
+            <TableHead className="w-[100px]">Region</TableHead>
+            <TableHead className="text-right">Latency</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {sorted_data.map((result: Result) => (
+            <TableRow key={`${result.provider}.${result.region}`}>
+              <TableCell className="flex items-center">
+                <CloudLogo provider={result.provider} />
+                {result.provider}
+              </TableCell>
+              <TableCell>{result.region}</TableCell>
+              <TableCell className="text-right">{result.latency}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
-}
+});
+
+LatencyTable.displayName = "LatencyTable";
+
+export { usePingQuery };
