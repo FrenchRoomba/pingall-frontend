@@ -12,24 +12,6 @@ import { useCallback, useEffect, useState } from "react";
 
 import { CloudLogo } from "./cloud-logos";
 import React from "react";
-import { getCurrentUser } from "@/lib/firebase/auth";
-import useSWRImmutable from "swr/immutable";
-import { useUser } from "@/lib/useUser";
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
-
-// function usePingQuery(url: string) {
-//   const { data, error, isLoading } = useSWRImmutable(
-//     `https://ping-service-tx45f4bnfa-ts.a.run.app/?url=${url}`,
-//     fetcher
-//   );
-
-//   return {
-//     pingQuery: data,
-//     isLoading,
-//     isError: error,
-//   };
-// }
 
 async function* getPingQuery(
   url: string,
@@ -88,7 +70,6 @@ export default function usePingQuery() {
   const [error, setError] = useState<unknown>();
   const [abortController, setAbortController] =
     useState<AbortController | null>(null);
-  // const { user, isLoading: isLoadingUser } = useUser();
 
   const mutate = useCallback(
     async (prompt: string) => {
@@ -104,7 +85,7 @@ export default function usePingQuery() {
       setAbortController(controller);
 
       try {
-        const idToken = await getCurrentUser()?.getIdToken();
+        const idToken = (await cookieStore.get("CF_Authorization"))?.value;
         if (idToken === undefined) {
           setError("No Id token");
           console.log(":(");
