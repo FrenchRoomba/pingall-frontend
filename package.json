@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "engines": {
-    "node": "22"
+    "node": "24"
   },
   "dependencies": {
     "@radix-ui/react-slot": "1.2.4",
