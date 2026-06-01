@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { CloudLogo } from "./cloud-logos";
 import React from "react";
@@ -68,8 +68,7 @@ export default function usePingQuery() {
   const [results, setResults] = useState<Result[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<unknown>();
-  const [abortController, setAbortController] =
-    useState<AbortController | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const mutate = useCallback(
     async (prompt: string) => {
@@ -77,12 +76,12 @@ export default function usePingQuery() {
       setResults([]);
       setError(undefined);
 
-      if (abortController) {
-        abortController.abort();
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
       const controller = new AbortController();
+      abortControllerRef.current = controller;
       const signal = controller.signal;
-      setAbortController(controller);
 
       try {
         const idToken = (await cookieStore.get("CF_Authorization"))?.value;
@@ -102,11 +101,14 @@ export default function usePingQuery() {
           return; // abort errors are expected
         }
         setError(err);
+      } finally {
+        if (abortControllerRef.current === controller) {
+          setIsLoading(false);
+          abortControllerRef.current = null;
+        }
       }
-      setIsLoading(false);
-      setAbortController(null);
     },
-    [abortController]
+    []
   );
 
   return [mutate, { data: results, isLoading, error }] as const;
@@ -138,12 +140,21 @@ export const LatencyTable = React.forwardRef<
     }
   }, [ref, runQuery]);
 
+  const initialUrlRef = useRef(url);
+  const runQueryRef = useRef(runQuery);
+
+  // Keep the runQuery callback reference updated on every render
+  useEffect(() => {
+    runQueryRef.current = runQuery;
+  });
+
   // Initial query on mount if URL is present
   useEffect(() => {
-    if (url !== "") {
-      runQuery();
+    const initialUrl = initialUrlRef.current;
+    if (initialUrl !== "") {
+      runQueryRef.current();
     }
-  }, []); // Only run once on mount
+  }, []); // Only run once on mount with the initial URL
 
   if (error) return <div>failed to load</div>;
 
